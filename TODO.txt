@@ -1,0 +1,3 @@
+- Use CSS variables instead of absolute values
+- Use other units than pixels for CSS values
+- Check whether there are security issues related to file browsing including if there is a request for a non-existing folder

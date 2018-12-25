@@ -1,0 +1,69 @@
+* {
+	font-family: Tahoma;
+	margin: 0;
+	padding: 0;
+	user-select: none;
+	box-sizing: border-box;
+}
+
+#explorer {
+	display: flex;
+	align-content: flex-start;
+	flex-wrap: wrap;
+	width: 100vw;
+	height: 100vh - 30px;
+}
+
+.file, .folder {
+	width: 100px;
+	height: 100px;
+	margin: 25px;
+	white-space: nowrap;
+}
+
+.file:hover, .folder:hover {
+	opacity: .5;
+}
+
+.folder {
+	background-image: url("https://image.flaticon.com/icons/svg/148/148953.svg");
+}
+
+.file {
+	background-image: url("https://image.flaticon.com/icons/svg/148/148967.svg");
+}
+
+.label {
+	position: relative;
+	top: 100%;
+	transform: translateY(0%);
+}
+
+.label > span {
+	display: inline-block;
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+#path {
+	position: sticky;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	top: 0;
+	height: 30px;
+	background-color: #dbdbdb;
+	z-index: 10;
+}
+
+#path > div {
+	width: 25px;
+	height: 25px;
+	background-image: url("https://image.flaticon.com/icons/svg/118/118740.svg");
+}
+
+#path > span:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}
