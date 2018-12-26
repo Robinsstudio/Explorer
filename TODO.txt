@@ -1,4 +1,4 @@
 - Use CSS variables instead of absolute values
 - Use other units than pixels for CSS values
 - Check whether there are security issues related to file browsing including if there is a request for a non-existing folder
-- Improve the context menu's display by handling the edge cases
+- Improve the context menu's display by handling the edge cases (when the window is scrolled or resized)

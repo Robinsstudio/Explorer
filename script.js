@@ -21,6 +21,10 @@ class ExplorerView extends React.Component {
 	}
 	
 	handleDoubleClick(file) {
+		this.open(file);
+	}
+
+	open(file) {
 		if (file.type == 'folder') {
 			socket.emit('FolderRequest', { folder: this.state.folder, file: file.name });
 		}
@@ -34,22 +38,28 @@ class ExplorerView extends React.Component {
 		});
 	}
 
-	updateContextMenu(file, event) {
+	updateContextMenu(event, file) {
 		const { pageX, pageY, screenX, screenY } = event;
 		const x = screenX - window.screenX;
 		const y = screenY - window.screenY;
 		const offset = { x: pageX - x, y: pageY - y };
-		this.setState({ contextMenu: { visible: true, x: x, y: y, offset: offset } });
+		this.setState({ contextMenu: { visible: true, x: x, y: y, offset: offset, items: this.buildMenuItems(file) } });
 		event.stopPropagation();
 		event.preventDefault();
 	}
   
 	buildFileItem(file) {
 		return (
-			React.createElement('div', { 'class': file.type, onDoubleClick: () => this.handleDoubleClick(file), onContextMenu: e => this.updateContextMenu(file, e) },
+			React.createElement('div', { 'class': file.type, onDoubleClick: () => this.handleDoubleClick(file), onContextMenu: e => this.updateContextMenu(e, file) },
 				React.createElement('div', { 'class': 'label' },
 					React.createElement('span', null, file.name)))
 		);
+	}
+
+	buildMenuItems(file) {
+		const menuItems = [];
+		menuItems.push({ label: "Ouvrir", onClick: () => this.open(file) });
+		return menuItems;
 	}
 	
 	render() {
@@ -64,7 +74,7 @@ class ExplorerView extends React.Component {
 				React.createElement("div", { id: "explorer", onClick: this.handleClick },
 					this.state.files.map(file => this.buildFileItem(file))),
 					
-				contextMenu.visible && React.createElement(ContextMenu, { x: contextMenu.x, y: contextMenu.y, offset: contextMenu.offset}))
+				contextMenu.visible && React.createElement(ContextMenu, { x: contextMenu.x, y: contextMenu.y, offset: contextMenu.offset, items: contextMenu.items}))
 		);
 	}
 }
@@ -91,10 +101,7 @@ class ContextMenu extends React.Component {
 	render() {
 		return (
 			React.createElement("div", { id: "contextMenu", ref: ref => this.element = ref },
-				React.createElement("div", null, "Ouvrir"),
-				React.createElement("div", null, "Renommer"),
-				React.createElement("div", null, "Supprimer"),
-				React.createElement("div", null, "Nouveau dossier"))
+				this.props.items.map(item => React.createElement('div', { onClick: item.onClick }, item.label)))
 		);
 	}
 }
