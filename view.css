@@ -1,5 +1,4 @@
 * {
-	font-family: Tahoma;
 	margin: 0;
 	padding: 0;
 	user-select: none;
@@ -33,13 +32,13 @@
 	background-image: url("https://image.flaticon.com/icons/svg/148/148967.svg");
 }
 
-.label {
+.fileName {
 	position: relative;
 	top: 100%;
 	transform: translateY(0%);
 }
 
-.label > span {
+.fileName > span {
 	display: inline-block;
 	position: relative;
 	left: 50%;
