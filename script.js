@@ -14,15 +14,14 @@ class ExplorerView extends React.Component {
 		});
 
 		this.handleClick = this.handleClick.bind(this);
+		this.open = this.open.bind(this);
+		this.remove = this.remove.bind(this);
 		this.hideContextMenu = this.hideContextMenu.bind(this);
+		this.updateContextMenu = this.updateContextMenu.bind(this);
 	}
 
 	handleClick() {
 		this.hideContextMenu();
-	}
-	
-	handleDoubleClick(file) {
-		this.open(file);
 	}
 
 	open(file) {
@@ -31,8 +30,8 @@ class ExplorerView extends React.Component {
 		}
 	}
 
-	delete(file) {
-		socket.emit('FileDelete', { folder: this.state.folder, file: file.name });
+	remove(file) {
+		socket.emit('FileRemove', { folder: this.state.folder, file: file.name });
 	}
 
 	goBack(howMany) {
@@ -47,36 +46,27 @@ class ExplorerView extends React.Component {
 		this.setState({ contextMenu: { visible: false } });
 	}
 
-	updateContextMenu(event, file) {
+	updateContextMenu(event, items = []) {
 		const { pageX, pageY, screenX, screenY } = event;
 		const x = screenX - window.screenX;
 		const y = screenY - window.screenY;
 		const offset = { x: pageX - x, y: pageY - y };
-		this.setState({ contextMenu: { visible: true, x: x, y: y, offset: offset, items: this.buildMenuItems(file), onClick: this.hideContextMenu } });
+		this.setState({ contextMenu: { visible: true, x: x, y: y, offset: offset, items: this.buildMenuItems(items), onClick: this.hideContextMenu } });
 		event.stopPropagation();
 		event.preventDefault();
 	}
   
 	buildFileItem(file) {
-		return (
-			React.createElement('div', { 'class': file.type, onDoubleClick: () => this.handleDoubleClick(file), onContextMenu: e => this.updateContextMenu(e, file) },
-				React.createElement('div', { 'class': 'fileName' },
-					React.createElement('span', null, file.name)))
-		);
+		const { open, remove, updateContextMenu } = this;
+		return React.createElement(File, { file, open, remove, updateContextMenu});
 	}
 
-	buildMenuItems(file) {
-		const menuItems = [];
-		menuItems.push({ label: 'Ouvrir', onClick: () => this.open(file) });
-		menuItems.push({ label: 'Supprimer', 'data-toggle': 'modal', 'data-target': '#myModal', onClick: () => {
-			this.state.modal = { title: 'Supprimer un fichier', body: `Voulez-vous vraiment supprimer ${file.name} ?`, onConfirm: () => this.delete(file) };
-		}});
-		return menuItems;
+	buildMenuItems(items) {
+		return items;
 	}
 	
 	render() {
-		const contextMenu = this.state.contextMenu;
-		const modal = this.state.modal;
+		const { contextMenu } = this.state;
 		return (
 			React.createElement('div', null,
 				React.createElement('div', { id: 'path'},
@@ -84,11 +74,47 @@ class ExplorerView extends React.Component {
 						onClick: () => this.goBack(self.length - index)
 					}, folder), React.createElement('div')])).slice(0, -1)),
 
-				React.createElement('div', { id: 'explorer', onClick: this.handleClick },
+				React.createElement('div', { id: 'explorer', onClick: this.handleClick, onContextMenu: e => this.updateContextMenu(e) },
 					this.state.files.map(file => this.buildFileItem(file))),
 					
-				contextMenu.visible && React.createElement(ContextMenu, contextMenu),
-				React.createElement(Modal, modal))
+				contextMenu.visible && React.createElement(ContextMenu, contextMenu))
+		);
+	}
+}
+
+class File extends React.Component {
+	constructor(props) {
+		super(props);
+
+		this.open = this.open.bind(this);
+		this.remove = this.remove.bind(this);
+		this.handleContextMenu = this.handleContextMenu.bind(this);
+	}
+
+	open() {
+		this.props.open(this.props.file);
+	}
+	
+
+	remove() {
+		this.props.remove(this.props.file);
+	}
+
+	handleContextMenu(event) {
+		this.props.updateContextMenu(event, [
+			{ label: 'Ouvrir', onClick: this.open },
+			{ label: 'Supprimer', onClick: () => {
+				showModal({ title: 'Supprimer un fichier', body: `Voulez-vous vraiment supprimer ${this.props.file.name} ?`, onConfirm: this.remove });
+			}}
+		]);
+	}
+
+	render() {
+		const { file } = this.props;
+		return (
+			React.createElement('div', { 'class': file.type, onDoubleClick: this.open, onContextMenu: e => this.handleContextMenu(e) },
+				React.createElement('div', { 'class': 'fileName' },
+					React.createElement('span', null, file.name)))
 		);
 	}
 }
@@ -96,12 +122,14 @@ class ExplorerView extends React.Component {
 class ContextMenu extends React.Component {
 	constructor(props) {
 		super(props);
+		this.element = React.createRef();
 	}
 
 	computePosition() {
 		const { x, y, offset } = this.props;
-		this.element.style.left = `${(this.element.offsetWidth < window.innerWidth - x) ? x + offset.x : x - this.element.offsetWidth + offset.x}px`;
-		this.element.style.top	= `${(this.element.offsetHeight < window.innerHeight - y) ? y + offset.y : y - this.element.offsetHeight + offset.y}px`;
+		const element = this.element.current;
+		element.style.left = `${(element.offsetWidth < window.innerWidth - x) ? x + offset.x : x - element.offsetWidth + offset.x}px`;
+		element.style.top = `${(element.offsetHeight < window.innerHeight - y) ? y + offset.y : y - element.offsetHeight + offset.y}px`;
 	}
 	
 	componentDidMount() {
@@ -114,30 +142,46 @@ class ContextMenu extends React.Component {
 	
 	render() {
 		return (
-			React.createElement('div', { id: 'contextMenu', ref: ref => this.element = ref, onClick: this.props.onClick },
+			React.createElement('div', { id: 'contextMenu', ref: this.element, onClick: this.props.onClick },
 				this.props.items.map(item => React.createElement('div', item, item.label)))
 		);
 	}
 }
 
-function Modal(props) {
-	return (
-		React.createElement('div', { id: 'myModal', 'class': 'modal fade', role: 'dialog' },
-			React.createElement('div', { 'class': 'modal-dialog' },
-				React.createElement('div', { 'class': 'modal-content' },
-					React.createElement('div', { 'class': 'modal-header' },
-						React.createElement('button', { type: 'button', 'class': 'close', 'data-dismiss': 'modal' }, '\xD7'),
-						React.createElement('h4', { 'class': 'modal-title' }, props.title)),
+const showModal = ({title, body, onConfirm}) => {
+	document.dispatchEvent(new CustomEvent('showModal', { detail: { title, body, onConfirm } }));
+}
 
-					React.createElement('div', { 'class': 'modal-body' },
-						React.createElement('p', null, props.body)),
+class Modal extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {};
+		document.addEventListener('showModal', ({detail: {title, body, onConfirm}}) => {
+			this.setState({ title, body, onConfirm });
+			$('#myModal').modal(true);
+		});
+	}
 
-					React.createElement('div', { 'class': 'modal-footer' },
-						React.createElement('button', { type: 'button', 'class': 'btn btn-primary', 'data-dismiss': 'modal', onClick: props.onConfirm }, 'Oui'),
-						React.createElement('button', { type: 'button', 'class': 'btn btn-secondary', 'data-dismiss': 'modal' }, 'Non')))))
-	);
+	render() {
+		return (
+			React.createElement('div', { id: 'myModal', 'class': 'modal fade', role: 'dialog' },
+				React.createElement('div', { 'class': 'modal-dialog' },
+					React.createElement('div', { 'class': 'modal-content' },
+						React.createElement('div', { 'class': 'modal-header' },
+							React.createElement('button', { type: 'button', 'class': 'close', 'data-dismiss': 'modal' }, '\xD7'),
+							React.createElement('h4', { 'class': 'modal-title' }, this.state.title)),
+	
+						React.createElement('div', { 'class': 'modal-body' },
+							React.createElement('p', null, this.state.body)),
+	
+						React.createElement('div', { 'class': 'modal-footer' },
+							React.createElement('button', { type: 'button', 'class': 'btn btn-primary', 'data-dismiss': 'modal', onClick: this.state.onConfirm }, 'Oui'),
+							React.createElement('button', { type: 'button', 'class': 'btn btn-secondary', 'data-dismiss': 'modal' }, 'Non')))))
+		);
+	}
 }
 
 socket.on("ExplorerInit", ({folder, files}) => {
-	ReactDOM.render(React.createElement(ExplorerView, { folder: folder, files: files }), document.getElementById('root'));
+	ReactDOM.render(React.createElement(ExplorerView, { folder: folder, files: files }), document.getElementById('app-root'));
+	ReactDOM.render(React.createElement(Modal), document.getElementById('modal-root'));
 });

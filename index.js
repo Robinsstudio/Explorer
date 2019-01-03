@@ -37,7 +37,7 @@ io.on('connection', socket => {
 		socket.emit('FolderResponse', getNestedFolder(folder, file));
 	});
 
-	socket.on('FileDelete', ({folder, file}) => {
+	socket.on('FileRemove', ({folder, file}) => {
 		deleteFile(join(__dirname, ...folder, file));
 		socket.emit('FolderResponse', getFolder(folder));
 	});

@@ -38,7 +38,7 @@
 	transform: translateY(0%);
 }
 
-.fileName > span {
+.fileName > * {
 	display: inline-block;
 	position: relative;
 	left: 50%;
