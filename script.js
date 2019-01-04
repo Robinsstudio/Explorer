@@ -73,16 +73,22 @@ class ExplorerView extends React.Component {
 	render() {
 		const { contextMenu } = this.state;
 		return (
-			React.createElement('div', null,
-				React.createElement('div', { id: 'path'},
-					[].concat(...['Explorer', ...this.state.folder].map((folder, index, self) => [React.createElement('span', {
-						onClick: () => this.goBack(self.length - index)
-					}, folder), React.createElement('div')])).slice(0, -1)),
+			<div>
+				<div id='path'>
+					{[].concat(...['Explorer', ...this.state.folder].map((folder, index, self) => {
+						return [
+							<span onClick={() => this.goBack(self.length - index)}>{folder}</span>,
+							<div/>
+						]
+					})).slice(0, -1)}
+				</div>
 
-				React.createElement('div', { id: 'explorer', onClick: this.handleClick, onContextMenu: e => this.updateContextMenu(e) },
-					this.state.files.map(file => this.buildFileItem(file))),
-					
-				contextMenu.visible && React.createElement(ContextMenu, contextMenu))
+				<div id='explorer' onClick={this.handleClick} onContextMenu={e => this.updateContextMenu(e)}>
+					{this.state.files.map(file => this.buildFileItem(file))}
+				</div>
+
+				{contextMenu.visible && React.createElement(ContextMenu, contextMenu)}
+			</div>
 		);
 	}
 }
@@ -128,12 +134,14 @@ class File extends React.Component {
 	}
 
 	render() {
-		const { file } = this.props;
+		const { type, name } = this.props.file;
 		const { renaming } = this.state;
 		return (
-			React.createElement('div', { 'class': file.type, onDoubleClick: this.open, onContextMenu: e => this.handleContextMenu(e) },
-				React.createElement('div', { 'class': 'fileName' },
-					(renaming) ? React.createElement(AutoFocusInput, { value: file.name, onStopEditing: e => this.stopRenaming(e) }) : React.createElement('span', null, file.name)))
+			<div className={type} onDoubleClick={this.open} onContextMenu={e => this.handleContextMenu(e)}>
+				<div className='fileName'>
+					{(renaming) ? <AutoFocusInput value={name} onStopEditing={e => this.stopRenaming(e)}/> : <span>{name}</span>}
+				</div>
+			</div>
 		);
 	}
 }
@@ -165,7 +173,7 @@ class AutoFocusInput extends React.Component {
 	}
 
 	render() {
-		return React.createElement('input', { type: 'text', onBlur: this.handleBlur, onKeyDown: e => this.handleKeyDown(e), ref: this.input});
+		return <input type='text' spellCheck='false' onBlur={this.handleBlur} onKeyDown={e => this.handleKeyDown(e)} ref={this.input}/>
 	}
 }
 
@@ -192,8 +200,9 @@ class ContextMenu extends React.Component {
 	
 	render() {
 		return (
-			React.createElement('div', { id: 'contextMenu', ref: this.element, onClick: this.props.onClick },
-				this.props.items.map(item => React.createElement('div', item, item.label)))
+			<div id='contextMenu' onClick={this.props.onClick} ref={this.element}>
+				{this.props.items.map(item => <div onClick={item.onClick}>{item.label}</div>)}
+			</div>
 		);
 	}
 }
@@ -214,19 +223,23 @@ class Modal extends React.Component {
 
 	render() {
 		return (
-			React.createElement('div', { id: 'myModal', 'class': 'modal fade', role: 'dialog' },
-				React.createElement('div', { 'class': 'modal-dialog' },
-					React.createElement('div', { 'class': 'modal-content' },
-						React.createElement('div', { 'class': 'modal-header' },
-							React.createElement('button', { type: 'button', 'class': 'close', 'data-dismiss': 'modal' }, '\xD7'),
-							React.createElement('h4', { 'class': 'modal-title' }, this.state.title)),
-	
-						React.createElement('div', { 'class': 'modal-body' },
-							React.createElement('p', null, this.state.body)),
-	
-						React.createElement('div', { 'class': 'modal-footer' },
-							React.createElement('button', { type: 'button', 'class': 'btn btn-primary', 'data-dismiss': 'modal', onClick: this.state.onConfirm }, 'Oui'),
-							React.createElement('button', { type: 'button', 'class': 'btn btn-secondary', 'data-dismiss': 'modal' }, 'Non')))))
+			<div id='myModal' className='modal fade' role='dialog'>
+				<div className='modal-dialog'>
+					<div className='modal-content'>
+						<div className='modal-header'>
+							<button type='button' className='close' data-dismiss='modal'>&times;</button>
+							<h4 className='modal-title'>{this.state.title}</h4>
+						</div>
+						<div className='modal-body'>
+							<p>{this.state.body}</p>
+						</div>
+						<div className='modal-footer'>
+							<button type='button' className='btn btn-primary' data-dismiss='modal' onClick={this.state.onConfirm}>Oui</button>
+							<button type='button' className='btn btn-secondary' data-dismiss='modal'>Non</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		);
 	}
 }

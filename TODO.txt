@@ -3,3 +3,4 @@
 - Check whether there are security issues related to file browsing including if there is a request for a non-existing folder
 - Improve the context menu's display by handling the edge cases (when the window is scrolled or resized)
 - Turn synchronous operations into asynchronous operations
+- Use a list instead of a div for listing files and folders
