@@ -37,6 +37,12 @@ io.on('connection', socket => {
 		socket.emit('FolderResponse', getNestedFolder(folder, file));
 	});
 
+	socket.on('FileRename', ({folder, file, newName}) => {
+		fs.rename(join(__dirname, ...folder, file), join(__dirname, ...folder, newName), err => {
+			socket.emit('FolderResponse', getFolder(folder));
+		});
+	});
+
 	socket.on('FileRemove', ({folder, file}) => {
 		deleteFile(join(__dirname, ...folder, file));
 		socket.emit('FolderResponse', getFolder(folder));
