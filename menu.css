@@ -5,10 +5,14 @@
 	z-index: 10;
 }
 
-#contextMenu > div {
+#contextMenu > a {
+	display: block;
+	color: #333;
+	text-decoration: none;
+	cursor: default;
 	padding: 5px;
 }
 
-#contextMenu > div:hover {
+#contextMenu > a:hover {
 	background-color: #ebebeb;
 }

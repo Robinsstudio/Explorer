@@ -5,7 +5,7 @@ const fs = require('fs');
 const { join } = require('path');
 
 app.get(/.*/, (req, res) => {
-	res.sendFile(req.url, {root: __dirname}, err => {
+	res.sendFile(decodeURIComponent(req.url), {root: __dirname}, err => {
 		if (err) {
 			res.sendFile("404.html", {root: __dirname});
 		}

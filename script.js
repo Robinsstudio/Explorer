@@ -62,8 +62,8 @@ class ExplorerView extends React.Component {
 	}
   
 	buildFileItem(file) {
-		const { open, rename, remove, updateContextMenu } = this;
-		return React.createElement(File, { file, open, rename, remove, updateContextMenu});
+		const { open, rename, remove, updateContextMenu, state: { folder } } = this;
+		return React.createElement(File, { folder, file, open, rename, remove, updateContextMenu});
 	}
 
 	buildMenuItems(items) {
@@ -73,7 +73,7 @@ class ExplorerView extends React.Component {
 	render() {
 		const { contextMenu } = this.state;
 		return (
-			<div>
+			<React.Fragment>
 				<div id='path'>
 					{[].concat(...['Explorer', ...this.state.folder].map((folder, index, self) => {
 						return [
@@ -87,8 +87,8 @@ class ExplorerView extends React.Component {
 					{this.state.files.map(file => this.buildFileItem(file))}
 				</div>
 
-				{contextMenu.visible && React.createElement(ContextMenu, contextMenu)}
-			</div>
+				{contextMenu.visible && <ContextMenu {...contextMenu}/>}
+			</React.Fragment>
 		);
 	}
 }
@@ -113,12 +113,14 @@ class File extends React.Component {
 	}
 
 	handleContextMenu(event) {
+		const { folder, file: { name, type } } = this.props;
 		this.props.updateContextMenu(event, [
 			{ label: 'Ouvrir', onClick: this.open },
 			{ label: 'Renommer', onClick: this.startRenaming },
 			{ label: 'Supprimer', onClick: () => {
-				showModal({ title: 'Supprimer un fichier', body: `Voulez-vous vraiment supprimer ${this.props.file.name} ?`, onConfirm: this.remove });
-			}}
+				showModal({ title: 'Supprimer un fichier', body: `Voulez-vous vraiment supprimer ${name} ?`, onConfirm: this.remove });
+			}},
+			{ label: 'Télécharger', href: [...folder, name].map(encodeURIComponent).join('/'), download: name}
 		]);
 	}
 
@@ -134,8 +136,7 @@ class File extends React.Component {
 	}
 
 	render() {
-		const { type, name } = this.props.file;
-		const { renaming } = this.state;
+		const { props: { file: { type, name } }, state: { renaming } } = this;
 		return (
 			<div className={type} onDoubleClick={this.open} onContextMenu={e => this.handleContextMenu(e)}>
 				<div className='fileName'>
@@ -201,7 +202,7 @@ class ContextMenu extends React.Component {
 	render() {
 		return (
 			<div id='contextMenu' onClick={this.props.onClick} ref={this.element}>
-				{this.props.items.map(item => <div onClick={item.onClick}>{item.label}</div>)}
+				{this.props.items.map(item => <a {...item}>{item.label}</a>)}
 			</div>
 		);
 	}
@@ -244,7 +245,7 @@ class Modal extends React.Component {
 	}
 }
 
-socket.on("ExplorerInit", ({folder, files}) => {
-	ReactDOM.render(React.createElement(ExplorerView, { folder: folder, files: files }), document.getElementById('app-root'));
-	ReactDOM.render(React.createElement(Modal), document.getElementById('modal-root'));
+socket.on("ExplorerInit", data => {
+	ReactDOM.render(<ExplorerView {...data}/>, document.getElementById('app-root'));
+	ReactDOM.render(<Modal/>, document.getElementById('modal-root'));
 });
