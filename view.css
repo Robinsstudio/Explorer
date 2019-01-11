@@ -65,3 +65,12 @@
 	cursor: pointer;
 	text-decoration: underline;
 }
+
+#dropZone {
+	position: fixed;
+	top: 30px;
+	width: 100%;
+	height: 100%;
+	border: 3px blue dotted;
+	background-color: rgba(98, 156, 201, .5);
+}

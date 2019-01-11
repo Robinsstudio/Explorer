@@ -2,6 +2,7 @@ const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const fs = require('fs');
+const formidable = require('formidable');
 const { join } = require('path');
 
 app.get(/.*/, (req, res) => {
@@ -9,6 +10,15 @@ app.get(/.*/, (req, res) => {
 		if (err) {
 			res.sendFile("404.html", {root: __dirname});
 		}
+	});
+}).post(/.*/, (req, res) => {
+	const form = formidable.IncomingForm();
+	form.parse(req, (err, fields, files) => {
+		const folder = fields.folder.split(',');
+		Object.values(files).forEach(({name, path}) => fs.rename(path, join(__dirname, ...folder, name), err => {
+			console.log(`${name} successfully uploaded!`);
+		}));
+		res.status(200).end();
 	});
 });
 

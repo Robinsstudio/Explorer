@@ -6,7 +6,8 @@ class ExplorerView extends React.Component {
 		this.state = {
 			folder: props.folder,
 			files: props.files,
-			contextMenu: { visible: false }
+			contextMenu: { visible: false },
+			dropZone: { visible: false }
 		};
 
 		socket.on('FolderResponse', ({folder, files}) => {
@@ -14,6 +15,8 @@ class ExplorerView extends React.Component {
 		});
 
 		this.handleClick = this.handleClick.bind(this);
+		this.handleDragOver = this.handleDragOver.bind(this);
+		this.handleDragLeave = this.handleDragLeave.bind(this);
 		this.open = this.open.bind(this);
 		this.rename = this.rename.bind(this);
 		this.remove = this.remove.bind(this);
@@ -23,6 +26,35 @@ class ExplorerView extends React.Component {
 
 	handleClick() {
 		this.hideContextMenu();
+	}
+
+	handleDragLeave() {
+		this.setState({ dropZone: {  visible: false } });
+	}
+
+	handleDragOver() {
+		this.setState({ dropZone: { visible: true } });
+	}
+
+	handleDrop(event) {
+		const formData = Array.from(event.dataTransfer.files).reduce((data, file) => {
+			data.append(file.name, file);
+			return data;
+		}, new FormData());
+
+		formData.append('folder', this.state.folder);
+	
+		$.ajax({
+			url: 'upload',
+			type: 'POST',
+			data: formData,
+			success: () => this.goBack(1),
+			processData: false,
+			contentType: false
+		});
+
+		this.setState({ dropZone: { visible: false } });
+		event.preventDefault();
 	}
 
 	open(file) {
@@ -71,7 +103,7 @@ class ExplorerView extends React.Component {
 	}
 	
 	render() {
-		const { contextMenu } = this.state;
+		const { contextMenu, dropZone } = this.state;
 		return (
 			<React.Fragment>
 				<div id='path'>
@@ -83,9 +115,11 @@ class ExplorerView extends React.Component {
 					})).slice(0, -1)}
 				</div>
 
-				<div id='explorer' onClick={this.handleClick} onContextMenu={e => this.updateContextMenu(e)}>
+				<div id='explorer' onClick={this.handleClick} onContextMenu={e => this.updateContextMenu(e)} onDragOver={this.handleDragOver}>
 					{this.state.files.map(file => this.buildFileItem(file))}
 				</div>
+
+				{dropZone.visible && <div id='dropZone' onDrop={e => this.handleDrop(e)} onDragLeave={this.handleDragLeave} onDragOver={e => e.preventDefault()}/>}
 
 				{contextMenu.visible && <ContextMenu {...contextMenu}/>}
 			</React.Fragment>

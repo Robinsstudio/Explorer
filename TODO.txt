@@ -4,3 +4,5 @@
 - Improve the context menu's display by handling the edge cases (when the window is scrolled or resized)
 - Turn synchronous operations into asynchronous operations
 - Use a list instead of a div for listing files and folders
+- Download functionality for folders
+- Explorer must take the whole viewport
