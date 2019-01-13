@@ -4,6 +4,15 @@ const io = require('socket.io')(http);
 const fs = require('fs');
 const formidable = require('formidable');
 const { join } = require('path');
+const { promisify } = require('util');
+const lstatAsync = promisify(fs.lstat);
+const readdirAsync = promisify(fs.readdir);
+const rmdirAsync = promisify(fs.rmdir);
+const unlinkAsync = promisify(fs.unlink);
+
+const handleError = (error) => {
+	console.log(error);
+}
 
 app.get(/.*/, (req, res) => {
 	res.sendFile(decodeURIComponent(req.url), {root: __dirname}, err => {
@@ -31,16 +40,25 @@ const getFolder = (folder = []) => {
 	};
 }
 
+const getFolderAsync = async (folder = []) => {
+	return {
+		folder,
+		files: await Promise.all((await readdirAsync(join(__dirname, ...folder))).map(async(name) => {
+			return {name: name, type: ((await lstatAsync(join(__dirname, ...folder, name))).isDirectory() ? 'folder' : 'file')};
+		}))
+	}
+}
+
 const getNestedFolder = (active, nested) => getFolder(Array.isArray(active) ? active.concat(nested) : []);
 
-const deleteFile = (file) => {
-	if (fs.lstatSync(file).isDirectory()) {
-		fs.readdirSync(file).map(sub => deleteFile(join(file, sub)));
-		fs.rmdirSync(file);
+const removeFileAsync = async (file) => {
+	if ((await lstatAsync(file)).isDirectory()) {
+		await Promise.all((await readdirAsync(file)).map(async(sub) => await removeFileAsync(join(file, sub))))
+		await rmdirAsync(file);
 	} else {
-		fs.unlinkSync(file);
+		await unlinkAsync(file);
 	}
-};
+}
 
 io.on('connection', socket => {
 	socket.on('FolderRequest', ({folder, file}) => {
@@ -54,8 +72,7 @@ io.on('connection', socket => {
 	});
 
 	socket.on('FileRemove', ({folder, file}) => {
-		deleteFile(join(__dirname, ...folder, file));
-		socket.emit('FolderResponse', getFolder(folder));
+		removeFileAsync(join(__dirname, ...folder, file)).then(() => socket.emit('FolderResponse', getFolder(folder))).catch(handleError);
 	});
 
 	socket.emit('ExplorerInit', getFolder());
